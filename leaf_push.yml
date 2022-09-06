@@ -1,0 +1,10 @@
+---
+- hosts: localhost
+  gather_facts: True
+
+  tasks:  
+  - name: Run Test Script
+      script: /home/vander/projetos-git/codes/templates-jinja2/cloud_claro/edgebsa/mpbgp-evpn/stor1_config.py
+      register: result
+      args:
+        executable: /usr/bin/python3

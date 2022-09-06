@@ -1,0 +1,232 @@
+
+=================================================
+{{ hostname }}
+=================================================
+
+nv overlay evpn
+feature nv overlay
+
+
+------------------------- Criar uma nova interface loopback para BGP -------------------------
+
+int lo1
+  description iBGP
+{% for L3_interfaces in L3_interfaces %}
+  ip address {{L3_interfaces['ip_add']}}/{{L3_interfaces['mask']}}
+{% endfor %}
+  ip router ospf 1 area 0.0.0.0
+
+------------------------- Remover e reconfigurar processo BGP -------------------------
+
+no router bgp 65064
+
+router bgp {{ asn }}
+   router-id {{ rid }}
+   address-family ipv4 unicast
+   address-family l2vpn evpn
+    retain route-target all
+{% for ebgp_neighbors in ebgp_neighbors %}
+ neighbor {{ ebgp_neighbors['neighbor']}}
+ remote-as {{ ebgp_neighbors['remote_as'] }}
+    password {{ebgp_neighbors['secret']}}
+    update-source loopback1
+    ebgp-multihop 2
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community extended
+      prefix-list to_spine_edge out
+      rewrite-evpn-rt-asn
+{% endfor %}
+{% for ibgp_neighbors in ibgp_neighbors %}
+ neighbor {{ ibgp_neighbors['neighbor']}}
+    remote-as  {{ ibgp_neighbors['remote_as'] }}
+    password  {{ibgp_neighbors['secret']}}
+{% endfor %}
+{% for L3_interfaces in L3_interfaces %}
+  update-source {{L3_interfaces['interface']}}
+{% endfor %}
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community extended
+
+------------------------- Criar mac-add virtual -------------------------
+
+fabric forwarding anycast-gateway-mac 0021.0021.0021
+
+------------------------- L3VNI -------------------------
+
+vrf context PROJETO_EDGE
+{% for L3VNI in L3VNI %}
+  vni {{L3VNI['vni']}}
+{% endfor %}
+  rd auto
+  address-family ipv4 unicast
+    route-target both auto
+    route-target both auto evpn
+
+
+------------------------- L2VNI -------------------------
+
+{% for L2VNI in L2VNI %}
+ vlan  {{ L2VNI['vlan_id']}}
+ name {{ L2VNI['vlan_name']}}
+ vn-segment 1600{{ L2VNI['vlan_id']}}
+{% endfor %}
+
+
+{% for L2VNI in L2VNI %}
+no interface Vlan{{ L2VNI['vlan_id']}}
+
+interface Vlan {{ L2VNI['vlan_id'] }}
+  no shutdown
+  vrf member PROJETO_EDGE
+  no ip redirects
+  ip address {{L2VNI['ip_add']}}/{{L2VNI['mask']}}
+  no ipv6 redirects
+  fabric forwarding mode anycast-gateway
+
+{% endfor %}
+
+interface loopback0
+  description VTEP-{{ hostname }}
+
+------------------------- VTEP GATEWAY -------------------------
+
+no int nve1 
+
+interface nve1
+  no shutdown
+  host-reachability protocol bgp
+  source-interface loopback0
+  source-interface hold-down-time 360
+{% for L2VNI in L2VNI %}
+  member vni 1600{{L2VNI['vlan_id']}}
+{% endfor %}
+    suppress-arp
+    ingress-replication protocol bgp
+  member vni 2121000 associate-vrf
+
+------------------------- EVPN -------------------------
+
+evpn
+{% for L2VNI in L2VNI %}
+  vni 1600{{L2VNI['vlan_id']}} l2
+    rd auto
+    route-target import auto
+    route-target export auto
+{% endfor %}
+
+
+---------------------------------------------------------------------
+------------------------- Plano de Rollback -------------------------
+---------------------------------------------------------------------
+
+1 - Voltar as features hsrp e pim
+2 - Configurar pim nas interfaces de transitos
+3 - Reconfigurar todas as interfaces VLAN com hsrp
+4 - Reconfigurar processo BGP com cada leaf sendo um ASN
+5 - Alterar update-souce para loopback1 e router-id com IP da loopback1 no processo BGP
+
+------------------------- Habilitar feature HSRP, PIM -------------------------
+
+feature hsrp
+feature pim
+feature bfd
+------------------------- Reconfigurar transitos com PIM Multicast e interfaces VLAN com HSRP  -------------------------
+
+
+ip pim rp-address 172.19.125.3 group-list 231.1.1.1/32
+
+interface port-channel104-105
+  ip pim bfd-instance
+  ip pim sparse-mode
+
+interface Vlan371
+  description Infranet
+  no shutdown
+  mtu 9216
+  ip address 172.19.98.130/26
+  hsrp version 2
+  hsrp 1
+    preempt
+    priority 110
+    ip 172.19.98.129
+
+interface Vlan372
+  description IntAPI
+  no shutdown
+  mtu 9216
+  ip address 172.19.99.2/24
+  hsrp version 2
+  hsrp 2
+    preempt
+    priority 110
+    ip 172.19.99.1
+
+interface Vlan375
+  description OS_Data
+  no shutdown
+  mtu 9216
+  ip address 172.19.104.2/24
+  hsrp version 2
+  hsrp 3
+    preempt
+    priority 110
+    ip 172.19.104.1
+
+interface Vlan376
+  description CompNet
+  no shutdown
+  mtu 9216
+  ip address 172.19.116.2/24
+  hsrp version 2
+  hsrp 4
+    preempt
+    priority 110
+    ip 172.19.116.1
+
+interface Vlan377
+  description InfraServ
+  no shutdown
+  mtu 9216
+  ip address 172.19.118.2/23
+  hsrp version 2
+  hsrp 5
+    preempt
+    priority 110
+    ip 172.19.118.1
+
+------------------------- Remove e reconfigurar processo BGP existente -------------------------
+
+no router bgp 65064
+
+router bgp 65064
+  router-id 172.19.125.4
+  address-family ipv4 unicast
+    network 172.19.96.0/23
+    network 172.19.98.0/26
+    network 172.19.98.64/26
+    network 172.19.98.128/26
+    network 172.19.99.0/24
+    network 172.19.104.0/24
+    network 172.19.116.0/24
+    network 172.19.118.0/23
+    network 172.19.122.0/23
+  neighbor 172.19.125.1
+    remote-as 65062
+    password 3 a688a0d52703d2f38a03769834363b41
+    update-source loopback0
+    ebgp-multihop 2
+    address-family ipv4 unicast
+      prefix-list to_spine_edge out
+      soft-reconfiguration inbound always
+  neighbor 172.19.125.2
+    remote-as 65063
+    password 3 a688a0d52703d2f38a03769834363b41
+    update-source loopback0
+    ebgp-multihop 2
+    address-family ipv4 unicast
+      prefix-list to_spine_edge out
+      soft-reconfiguration inbound always
+  vrf teste-evpn
+    address-family ipv4 unicast

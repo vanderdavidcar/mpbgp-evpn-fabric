@@ -1,0 +1,35 @@
+
+=================================================
+{{ hostname }}
+=================================================
+
+-----------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+router bgp {{ asn }}
+   router-id {{ rid }}
+   address-family ipv4 unicast
+   redistribute direct route-map permit-all
+   address-family l2vpn evpn
+    retain route-target all
+    maximum-paths 2
+    nexthop route-map permit-all
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community extended
+{% for ebgp_neighbors in ebgp_neighbors %}
+ neighbor {{ ebgp_neighbors['neighbor']}}
+ remote-as {{ ebgp_neighbors['remote_as'] }}
+    password {{ebgp_neighbors['secret']}}
+{% for L3_interfaces in L3_interfaces %}
+  update-source {{L3_interfaces['interface']}}
+{% endfor %}
+    ebgp-multihop 2
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community extended
+      route-map permit-all out
+      rewrite-evpn-rt-asn
+{% endfor %}
+

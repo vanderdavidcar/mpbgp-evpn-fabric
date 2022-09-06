@@ -1,0 +1,31 @@
+---
+# vars file for jinja2_spine2
+  hostname: brbsa-bt02-spine2
+  asn: 65062
+  rid: 172.19.125.2
+  ebgp_neighbors:
+  -  remote_as: 65063
+     neighbor: 172.19.125.10
+     update_source: Loopback0
+     secret: so_eu_sei_a_senha
+  -  remote_as: 65063
+     neighbor: 172.19.125.11
+     update_source: Loopback0
+     secret: so_eu_sei_a_senha
+  -  remote_as: 65064
+     neighbor: 172.19.125.12
+     update_source: Loopback0
+     secret: so_eu_sei_a_senha
+  -  remote_as: 65064
+     neighbor: 172.19.125.13
+     update_source: Loopback0
+     secret: so_eu_sei_a_senha
+#  rp_address: 192.168.0.100
+  L3_interfaces:
+#  -  interface: Ethernet 1/1
+#  -  interface: Ethernet 1/2
+#  -  interface: loopback 0
+  -  interface: loopback 0
+     ip_add: 172.19.125.2
+     mask: 32
+

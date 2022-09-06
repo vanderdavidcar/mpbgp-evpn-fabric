@@ -1,0 +1,38 @@
+---
+# vars file for jinja2_stor1
+  hostname: brbsa-bt01-stor1-1
+  asn: 65064
+  rid: 172.19.125.12
+  ebgp_neighbors:
+  -  remote_as: 65062
+     neighbor: 172.19.125.1
+     update_source: Loopback1
+     secret: so_eu_sei_a_senha
+  -  remote_as: 65062
+     neighbor: 172.19.125.2
+     update_source: Loopback1
+     secret: so_eu_sei_a_senha
+  ibgp_neighbors:
+  -  remote_as: 65064
+     neighbor: 172.19.125.13
+     update_source: Loopback1
+     secret: so_eu_sei_a_senha
+#  rp_address: 192.168.0.100
+  L3_interfaces:
+#  -  interface: Ethernet 1/1
+#  -  interface: Ethernet 1/2
+#  -  interface: loopback 0
+  -  interface: loopback 1
+     ip_add: 172.19.125.12
+     mask: 32
+  L2VNI:
+  -  vlan_id: 373
+     vni: 1600373
+     ip_add: 172.19.105.1
+     mask: 24
+     vlan_name: L2-VNI-371-Infranet
+#     mcast: 239.0.0.140
+  L3VNI:
+  -  vlan_id: 2121
+     vlan_name: L3-VNI-2121-PROJETO_EDGE
+     vni: 2121000

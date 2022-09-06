@@ -1,0 +1,51 @@
+
+=================================================
+{{ hostname }}
+=================================================
+
+{%- for vlanid, name in vlan.items() %}
+ vlan  {{ vlanid }}
+ name {{ name }}
+ vn-segment 1600{{ vlanid }}
+
+no interface Vlan{{ vlanid }}
+
+interface Vlan {{ vlanid }}
+  no shutdown
+  vrf member PROJETO_EDGE
+  no ip redirects	
+  ip address {{vlan['ip']}} 
+  no ipv6 redirects
+  fabric forwarding mode anycast-gateway
+
+interface nve1
+  no shutdown
+  host-reachability protocol bgp
+  source-interface loopback0
+  source-interface hold-down-time 360
+  member vni 1600{{vlan['vlanid'}}
+    suppress-arp
+    ingress-replication protocol bgp
+  member vni 2121000 associate-vrf
+{% endfor %}
+
+interface loopback0
+  description VTEP-{{ hostname }}
+
+router bgp {{ id }}
+   router-id {{ rid }}
+   address-family ipv4 unicast
+   address-family l2vpn evpn
+    retain route-target all
+{% for neighbor in bgp %}
+ neighbor {{ neighbor.neighbor }}
+ remote-as {{ neighbor.asn }}
+    password {{ secret }}
+    update-source loopback1
+    ebgp-multihop 2
+    address-family l2vpn evpn
+      allowas-in 3
+      send-community extended
+      prefix-list to_spine_edge out
+      rewrite-evpn-rt-asn
+{% endfor %}
