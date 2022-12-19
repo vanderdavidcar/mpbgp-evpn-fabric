@@ -134,11 +134,8 @@ evpn
 
 ------------------------- VLANS -------------------------
 
-{% for id  in vlan %}
- vlan  {{ id }}
- name {{ id.name }}
- vn-segment 1600{{ id }}
+{% for L2VNI in L2VNI %}    
+  vlan {{ L2VNI['vlan_id'] }}
+  name {{ L2VNI['vlan_name'] }}
+  vn-segment 1600{{ L2VNI['vlan_id'] }}
 {% endfor %}
-
-vlan {{ vlan }}
-vn-segment 1600{{ vlan }}
