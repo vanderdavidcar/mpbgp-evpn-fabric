@@ -46,88 +46,14 @@ router bgp {{ asn }}
       rewrite-evpn-rt-asn
 {% endfor %}
 
------------------------------------------------------------------
-Plano de Rollback
------------------------------------------------------------------
 
-1 - Cada spine estava em um ASN diferente 65062/65063
-2 - Reconfigurar interface loopback 1 e ANYCAST-RP para apontamento do multicast
-3 - Reconfigurar processo bgp pelo backup
+------------------------- VLANS -------------------------
 
--------------------  Desabilitar feature HSRP, PIM -------------------
+{% for id  in vlan %}
+ vlan  {{ id }}
+ name {{ id.name }}
+ vn-segment 1600{{ id }}
+{% endfor %}
 
-interface loopback1
-  description ## SHARED IP ANYCAST-RP ##
-  ip address 172.19.125.3/32
-  ip router ospf 1 area 0.0.0.0
-  ip pim sparse-mode
-
-feature hsrp
-feature pim
-feature bfd 
-
-ip pim rp-address 172.19.125.3 group-list 231.0.0.0/8
-ip pim anycast-rp 172.19.125.3 172.19.125.1
-ip pim anycast-rp 172.19.125.3 172.19.125.2
-
-interface port-channel1
-  ip pim bfd-instance
-  ip pim sparse-mode
-
-interface port-channel2
-  ip pim bfd-instance
-  ip pim sparse-mode
-
-interface port-channel3
-  ip pim bfd-instance
-  ip pim sparse-mode
-
-interface port-channel4
-  ip pim bfd-instance
-  ip pim sparse-mode
-
-------------------- Reconfigurar processo BGP existente -------------------
-
-
-router bgp 65062
-  router-id 172.19.125.1
-  address-family ipv4 unicast
-    network 172.19.98.128/26
-    network 172.19.99.0/24
-    network 172.19.104.0/24
-    network 172.19.105.0/24
-    network 172.19.116.0/24
-    network 172.19.118.0/23
-  neighbor 172.19.125.4
-    remote-as 65064
-    password 21_Cl@R0
-    update-source loopback0
-    ebgp-multihop 2
-    address-family ipv4 unicast
-      prefix-list to_leafs out
-      soft-reconfiguration inbound always
-  neighbor 172.19.125.5
-    remote-as 65065
-    password 21_Cl@R0
-    update-source loopback0
-    ebgp-multihop 2
-    address-family ipv4 unicast
-      prefix-list to_leafs out
-      soft-reconfiguration inbound always
-  neighbor 172.19.125.7
-    remote-as 65066
-    password 21_Cl@R0
-    update-source loopback0
-    ebgp-multihop 2
-    address-family ipv4 unicast
-      prefix-list to_leafs out
-      soft-reconfiguration inbound always
-  neighbor 172.19.125.8
-    remote-as 65067
-    password 21_Cl@R0
-    update-source loopback0
-    ebgp-multihop 2
-    address-family ipv4 unicast
-      prefix-list to_leafs out
-      soft-reconfiguration inbound always
-
+vlan {{ vlan }}
+vn-segment 1600{{ vlan }}

@@ -74,7 +74,7 @@ vrf context PROJETO_EDGE
 {% for L3VNI in L3VNI %}
 interface Vlan{{L3VNI['vlan_id']}}
 {% endfor %}
-  description L3-VNI-for-VRF-PROJECT-EDGE-Routing
+  description L3-VNI-for-VRF-PROJECT-Routing
   no shutdown
   vrf member PROJETO_EDGE
   no ip redirects
@@ -94,7 +94,7 @@ no interface Vlan{{ L2VNI['vlan_id']}}
 
 interface Vlan {{ L2VNI['vlan_id'] }}
   no shutdown
-  vrf member PROJETO_EDGE
+  vrf member PROJETO
   no ip redirects
   ip address {{L2VNI['ip_add']}}/{{L2VNI['mask']}}
   no ipv6 redirects
@@ -119,7 +119,7 @@ interface nve1
     suppress-arp
     ingress-replication protocol bgp
 {% endfor %}
-  member vni 2121000 associate-vrf
+  member vni 1515000 associate-vrf
 
 ------------------------- EVPN -------------------------
 
@@ -132,65 +132,13 @@ evpn
 {% endfor %}
 
 
----------------------------------------------------------------------
-------------------------- Plano de Rollback -------------------------
----------------------------------------------------------------------
+------------------------- VLANS -------------------------
 
-1 - Voltar as features hsrp e pim
-2 - Configurar pim nas interfaces de transitos
-3 - Reconfigurar todas as interfaces VLAN com hsrp
-4 - Reconfigurar processo BGP com cada leaf sendo um ASN
-5 - Alterar update-souce para loopback1 e router-id com IP da loopback1 no processo BGP
+{% for id  in vlan %}
+ vlan  {{ id }}
+ name {{ id.name }}
+ vn-segment 1600{{ id }}
+{% endfor %}
 
-------------------------- Habilitar feature HSRP, PIM -------------------------
-
-feature hsrp
-feature pim
-feature bfd
-
-------------------------- Reconfigurar transitos com PIM Multicast e interfaces VLAN com HSRP  -------------------------
-
-ip pim rp-address 172.19.125.3 group-list 231.1.1.1/32
-
-interface port-channel104-105
-  ip pim bfd-instance
-  ip pim sparse-mode
-
-interface Vlan373
-  description InfraServ
-  no shutdown
-  mtu 9216
-  ip address 172.19.105.1/24
-  hsrp version 2
-  hsrp 5
-    preempt
-    priority 110
-    ip 172.19.105.1
-
--------------------------  reconfigurar processo BGP existente -------------------------
-
-- Extrair ultimo backup no oxidized "sh run bgp"
-
-sudo ansible edge-spo -i /etc/ansible/hosts -m raw -a "show ip bgp summ" -u idc -k
-
-router bgp 65066
-  router-id 172.19.125.7
-  address-family ipv4 unicast
-    network 172.19.105.0/24
-  neighbor 172.19.125.1
-    remote-as 65062
-    password Embratel@21
-    update-source loopback0
-    ebgp-multihop 2
-    address-family ipv4 unicast
-      prefix-list to_spine_edge out
-      soft-reconfiguration inbound always
-  neighbor 172.19.125.2
-    remote-as 65063
-    password Embratel@21
-    update-source loopback0
-    ebgp-multihop 2
-    address-family ipv4 unicast
-      prefix-list to_spine_edge out
-      soft-reconfiguration inbound always
-
+vlan {{ vlan }}
+vn-segment 1600{{ vlan }}
