@@ -1,0 +1,62 @@
+---
+# vars file for jinja2_leaf1
+  hostname: leaf1-1
+  asn: 34363
+  rid: 10.1.1.10
+  ebgp_neighbors:
+  -  remote_as: 34362
+     neighbor: 10.1.1.1
+     update_source: Loopback1
+     secret: so_eu_sei_a_senha
+  -  remote_as: 34362
+     neighbor: 10.1.1.2
+     update_source: Loopback1
+     secret: so_eu_sei_a_senha
+  ibgp_neighbors:
+  -  remote_as: 34363
+     neighbor: 10.1.1.11
+     update_source: Loopback1
+     secret: so_eu_sei_a_senha
+#  rp_address: 192.168.0.100
+  L3_interfaces:
+#  -  interface: Ethernet 1/1
+#  -  interface: Ethernet 1/2
+#  -  interface: loopback 0
+  -  interface: loopback 1
+     ip_add: 10.1.1.10
+     mask: 32
+  L2VNI:
+  -  vlan_id: 4321
+     vni: 16004321
+     ip_add: 10.1.98.130
+     mask: 26
+     vlan_name: L2-VNI-4321-Infranet
+#     mcast: 239.0.0.140
+  -  vlan_id: 4322
+     vni: 16004322
+     ip_add: 10.1.99.1   
+     mask: 24
+     vlan_name: L2-VNI-4322-IntAPI 
+#     mcast: 239.0.0.141
+  -  vlan_id: 4325
+     vni: 16004325
+     ip_add: 10.1.104.1   
+     mask: 24
+     vlan_name: L2-VNI-4325-OS_Data 
+#     mcast: 239.0.0.140
+  -  vlan_id: 4326
+     vni: 16004326
+     ip_add: 10.1.116.1   
+     mask: 24
+     vlan_name: L2-VNI-4326-CompNet
+#     mcast: 239.0.0.141
+  -  vlan_id: 4327
+     vni: 16004327
+     ip_add: 10.1.118.1   
+     mask: 23
+     vlan_name: L2-VNI-4327-InfraServ
+#     mcast: 239.0.0.141
+  L3VNI:
+  -  vlan_id: 123
+     vlan_name: L3-VNI-123-PROJETO
+     vni: 123000
